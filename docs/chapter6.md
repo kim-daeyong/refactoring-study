@@ -14,9 +14,31 @@
     - 추출 코드에 의해 변경되는 지역변수가 있는지 파악
     - 빼낸 코드에서 읽어들인 지역변수를 대상 메서드에 배개변수로 전달
 
+    ```java
+        void methodA(int a) {
+            otherMethod();
+
+            // 세부 정보 출력
+            System.out.println("name: " + _name);
+            System.out.println("amount: " + amount);
+        }
+
+        // 변경
+
+        void methodA(int a) {
+            otherMethod();
+            printDetail(a);
+        }
+
+        void printDetail(int a) {
+            System.out.println("name: " + _name);
+            System.out.println("amount: " + a);
+        }
+    ```
+
 ### 메소드 내용 직접 삽입
 
-* 메소드 명에 그 로직이 견줄 간단한 기능이라면 메소드를 없앤다.
+* 메소드 명으로 그 로직이 설명될 간단한 기능이라면 메소드를 없앤다.
 
 * 방법
     - 메서드가 재정의되어 있지 않은지 확인
@@ -25,6 +47,22 @@
     - 테스트
     - 메서드 정의 삭제
     - 복잡한 상황에선 이 기법을 자제한다.
+
+    ```java
+    int getRating() {
+        return (moreThanFiveLateDelivers()) ? 2 : 1;
+    }
+
+    boolean moreThanFiveLateDelivers() {
+        return _numberOfLateDelivers > 5;
+    }
+
+    //변경
+
+    int getRating() {
+        return (_numberOfLateDelivers > 5) ? 2 : 1;
+
+    ```
 
 ### 임시변수 내용 직접 삽입
 
@@ -36,6 +74,14 @@
     - 컴파일, 테스트
     - 임시변수 선언과 대입문을 삭제
     - 컴파일, 테스트
+    ```java
+        double basePrice = anOrder.basePrice();
+        return (basePrice > 1000)
+        
+        ///변경
+
+        return (anOrder.basePrice() > 1000)
+    ```
 
 ### 임시변수를 메서드로 변환
 
@@ -52,6 +98,27 @@
     - 컴파일, 테스트
     - 임시변수를 대상으로 임시변수 내용 직접 삽입 기법을 실시
 
+    ```java
+        double basePrice = _quantity * _itemPrice;
+        if (basePrice > 1000) {
+            return basePrice * 0.95;
+        } else {
+            return basePrice * 0.95;
+        }
+        
+        //변경
+
+        if (basePrice() > 1000) {
+            return basePrice() * 0.95;
+        } else {
+            return basePrice() * 0.95;
+        }
+
+        private double basePrice() {
+            return _quantity * _itemPrice
+        }
+    ```
+
 * 참고
     - 임시변수들 추출 전 final을 이용하여 정말 한번만 사용되는지 확인해보자
 
@@ -65,6 +132,28 @@
     - 컴파일, 테스트
     - 다른 부분을 대상으로 반복
 
+
+    ```java
+        if ((platform.toUpperCase().indexOf("MAC") > -1) &&
+                browser.toUpperCase().indexOf("IE") > -1) &&
+                wasInitialized() && resize > 0 ) {
+
+        }
+
+        //변경
+
+        final boolean isMacOs = platform.toUpperCase().indexOf("MAC") > -1;
+        final boolean isIEBrowser = browser.toUpperCase().indexOf("IE") > -1;
+        final boolean wasResized = resize > 0;
+
+        if (isMacOs && 
+                isIEBrowser && 
+                wasInitialized() &&
+                wasResized) {
+
+        }
+    ```
+
 ### 임시변수 분리
 
 * 루프변수나 누적용 임시변수가 아닌 임시변수에 여러 번 값이 대입될 땐 각 대입마다 다른 임시변수를 사용
@@ -77,6 +166,20 @@
     - 그 임시변수의 참조 부분을 두번째 대입문으로 수정
     - 컴파일, 테스트
     - 각 대입문마다 차례로 선언문에서 임시변수 이름을 변경, 대입문까지 참조를 수정하며 위 과정 반복
+
+    ```java
+        double temp = 2 * (height + width);
+        System.out.println(temp);
+        temp = height * width;
+        System.out.println(temp);
+        
+        //변경
+
+        final double perimeter = 2 * (height + width);
+        System.out.println(perimeter);
+        final doublie area = height * width;
+        System.out.println(area);
+    ```
 
 ### 매개변수로의 값 대입 제거
 
@@ -95,6 +198,21 @@
     - 매개변수로의 값 대입을 임시변수로의 값 대입으로 수정
     - 컴파일, 테스트
 
+    ```java
+        int discount (int inputVal, int quantity, int yearToDate) {
+
+            if (inputVal > 50) inputVal -= 2;
+        }
+        
+        // 변경
+
+        int discount (int inputVal, int quantity, int yearToDate) {
+            int result = inputVal;
+
+            if (inputVal > 50) result -= 2;
+        }
+    ```
+
 * 자바에서의 값을 통한 전달
     - 자바는 값을 통한 전달 사용
 
@@ -112,6 +230,39 @@
     - 컴파일
     - 원본 메서드를 개 객체 생성과, compute 메서드 호출을 담당하는 메서드로 변경
 
+    ```java
+        class Order...
+            double price() {
+                double primaryBasePrice;
+                double secondaryBasePrice;
+                double tertiaryBasePrice;
+
+                // 계산 코드 ;
+
+                ...
+            }
+
+        // 변경
+
+        class Order ...
+
+            double price() {
+                return new PriceCalculator(this).compute()
+            }
+        
+
+        class PriceCalculator...
+
+            final double primaryBasePrice;
+            final double secondaryBasePrice;
+            final double tertiaryBasePrice;
+
+            double compute() {
+                // 계산
+            }
+        
+    ```
+
 ### 알고리즘 전환
 
 * 알고리즘을 더 분명한 것으로 교체해야 할땐 해당 메서드의 내용을 새 알고리즘으로 변경
@@ -121,3 +272,32 @@
     - 새 알고리즘을 실행하면서 여러 번의 테스트
     - 각 테스트 결과가 다르다면 기존 알고리즘으로 테스트와 디버깅을 실시
         - 기존, 새 알고리즘을 대상으로 각 테스트 케이스를 실행하고 두 결과를 비교 후 문제 수정
+
+    ```java
+        String foundPerson(String[] people) {
+            for (int i = 0; i < people.length; i++>) {
+                if (people[i].equals ("Don")) {
+                    return "Don";
+                }
+
+                if (people[i].equals ("John")) {
+                    return "John";
+                }
+
+                if (people[i].equals ("Kent")) {
+                    return "Kent";
+                }
+            }
+            return "";
+        }
+
+        //변경
+
+        List candidates = Arrays.asList(new String[] {"Don", "John", "Kent"})
+        for (int i = 0; i < people.length; i++>) {
+            if (candidates.contains(people[i])) 
+                return people[i];
+        }
+        return "";
+
+    ```
