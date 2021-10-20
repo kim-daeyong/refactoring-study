@@ -9,3 +9,7 @@
 [6](https://github.com/kim-daeyong/refactoring-study/blob/master/docs/chapter6.md)  
 
 [7](https://github.com/kim-daeyong/refactoring-study/blob/master/docs/chapter7.md)  
+
+[8](https://github.com/kim-daeyong/refactoring-study/blob/master/docs/chapter8.md)  
+
+[9](https://github.com/kim-daeyong/refactoring-study/blob/master/docs/chapter9.md)  
